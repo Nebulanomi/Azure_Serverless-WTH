@@ -98,7 +98,51 @@ After changing it we can send our name as part of the JSON Body content:
 ![Alt text](image-4.png)
 
 ## Challenge 03: Create Resources
-Provision the basic resources in Azure to prepare your deployment ground
+Provision the basic resources in Azure to prepare your deployment ground, in the same region.
+
+    1. Created a resource group: whatthehack-rg
+    2. Created an Azure Cosmos DB for NoSQL: whatthehack-cosmos
+        Serverless, the rest as default
+    3. Created a storage account: whatthehackinit1
+    4. Created two containers: images & export
+    5. Created a new Function App: tollboothapp1
+        .NET, 6, allowed it to create a new storage account, disabled application insights
+    6. Created a new Function App: tollboothevents1
+        Node.js, 18 LTS, allowed it to create a new storage account, disabled application insights
+    7. Accessed the Cosmos DB account -> Data Explorer -> New container
+        Database ID "LicensePlates", Container ID "Processed", Partition key : "/licensePlateText"
+    8. Created another container using the same Database ID as above
+        Database ID "LicensePlates", Container ID "NeedsManualReview", Partition key : "/fileName"
+    9. Created an Event Grid topics: whatthehacktopic1
+        Event Schema: Event Grid Schema
+    10. Created a Computer vision: whatthehackvision1
+        Pricing tier: Standard S1
+    11. Created a key vault: whatthehackvault1
+        Pricing Tier : Standard
+    12. Configured the tollboothapp1 Function App to use key vault for secrets
+        tollboothapp1 -> Identity -> System Assigned -> On
+        This is used for Azure services to connect to other Azure services by giving it an identity
+    13. whatthehackvault1 -> Access control (IAM) -> Created two policies that enable tollboothapp1 to read from the key vault
+        Role: Key Vault Crypto Officer
+        Members: Managed identity, Managed identity: Function App, Select: tollboothapp1
+        Role: Key Vault Secrets Officer
+        Members: Managed identity, Managed identity: Function App, Select: tollboothapp1
+    14. whatthehackvault1 -> Secrets -> Created secrets -> Generate/Import
+        Name: computerVisionApiKey, Secret value: Get from "Keys and Endpoint" in the resource
+        Name: eventGridTopicKey, Secret value: Get from "Access keys" in the resource
+        Name: cosmosDBAuthorizationKey, Secret value: Get from "Keys" in the resource (Read-write keys)
+        Name: blobStorageConnection, Secret value: Get from "Access keys" in the resource (Connection string)
+
+
+### Learning Resources:
+[Creating a storage account (blob hot tier)](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-create?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json%23create-a-storage-account&tabs=azure-portal)
+[Creating a function app](https://learn.microsoft.com/en-us/azure/azure-functions/functions-create-function-app-portal)
+[Concepts in Event Grid](https://learn.microsoft.com/en-us/azure/event-grid/concepts)
+[Creating an Azure Cosmos DB account](https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-manage-database-account)
+[Key Vault Secret Identifiers](https://learn.microsoft.com/en-us/azure/key-vault/general/about-keys-secrets-certificates)
+[Configure Azure Functions and KeyVault to work together](https://learn.microsoft.com/en-us/azure/app-service/app-service-key-vault-references?tabs=azure-cli#granting-your-app-access-to-key-vault)
+
+
 Challenge 04: Configuration
 Configure application settings on the Microsoft Azure Portal and update the TollBooth application code
 Challenge 05: Deployment
