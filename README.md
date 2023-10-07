@@ -192,11 +192,35 @@ Save after each change.
         Make note of the event types defined here (the first parameter passed into the Send method), as they will be used later on when creating new functions in the second Function App you provisioned earlier.
     10. Added the following under TODO3: await Send("savePlateData", "TollBooth/CustomerService", data);
     11. Added the following under TODO4: await Send("queuePlateForManualCheckup", "TollBooth/CustomerService", data);
+    12. Built the solution: dotnet build
+        Verified that Build Succeeded
+    13. Verified that no erros appeared in the tollboothapp1 Function App
 
 [Reference key vault from app service](https://learn.microsoft.com/en-us/azure/app-service/app-service-key-vault-references?tabs=azure-cli)
+[Code and test azure functions locally](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=windows%2Cisolated-process%2Cnode-v4%2Cpython-v2%2Chttp-trigger%2Ccontainer-apps&pivots=programming-language-csharp)
+[How to add application settings to azure function](https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-azure-function-app-settings?tabs=portal)
 
-Challenge 05: Deployment
+## Challenge 05: Deployment
 Deploy the Tollbooth project to the “App” in the Azure Portal Function App and configure the Event Grid
+
+    1. In the Tollbooth project -> Azure plugin -> workspace -> Deploy to Function App
+        Choose the current project folder -> The subscription -> Deploy to tollboothapp1
+        It creates a zip file and sends it to Azure
+    2. In the Tollbooth Function App Overivew we can see the two functions that were added:
+
+![Alt text](image-7.png)
+
+    3. Created an Event Subscription in the storage account: whatthehackinit1 -> Events -> Event Subscription
+        Name: ProcessImage, Event Schema: Event Grid Schema, System Topic Name: ProcessImage, Filter to Event Types: Blob Created, Endpoint Type: Azure Function, Endpoint: The "ProcessImage" Function in our Function App
+        Event Subscriptions listen for events emitted by the topic resource and send them to the endpoint resource. Learn more
+
+![Alt text](image-8.png)
+
+Now whenever a blob is created the storage account is going to call the "ProcessImage" endpoint of Azure Function to process the image 
+
+[Deploy Functions to Azure](https://www.thebestcsharpprogrammerintheworld.com/2018/08/21/deploy-an-azure-function-created-from-visual-studio-2/)
+[Create Event Grid Subscription in Azure Function](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-event-grid-trigger?tabs=python-v2%2Cisolated-process%2Cnodejs-v4%2Cextensionv3&pivots=programming-language-csharp#azure-portal)
+
 Challenge 06: Create Functions in the Portal
 Create the event triggered functions in the Azure Portal to respond to Event Grid Topics
 Challenge 07: Monitoring
