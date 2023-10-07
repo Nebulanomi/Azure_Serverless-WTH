@@ -133,7 +133,6 @@ Provision the basic resources in Azure to prepare your deployment ground, in the
         Name: cosmosDBAuthorizationKey, Secret value: Get from "Keys" in the resource (Read-write keys)
         Name: blobStorageConnection, Secret value: Get from "Access keys" in the resource (Connection string)
 
-
 ### Learning Resources:
 [Creating a storage account (blob hot tier)](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-create?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json%23create-a-storage-account&tabs=azure-portal)
 [Creating a function app](https://learn.microsoft.com/en-us/azure/azure-functions/functions-create-function-app-portal)
@@ -142,9 +141,60 @@ Provision the basic resources in Azure to prepare your deployment ground, in the
 [Key Vault Secret Identifiers](https://learn.microsoft.com/en-us/azure/key-vault/general/about-keys-secrets-certificates)
 [Configure Azure Functions and KeyVault to work together](https://learn.microsoft.com/en-us/azure/app-service/app-service-key-vault-references?tabs=azure-cli#granting-your-app-access-to-key-vault)
 
-
-Challenge 04: Configuration
+## Challenge 04: Configuration
 Configure application settings on the Microsoft Azure Portal and update the TollBooth application code
+Application settings are encrypted at rest and transmitted over an encrypted channel
+Application Settings are exposed as environment variables for access by your application at runtime.
+This is what the function will use to pull the keys in the key vault.
+Save after each change.
+
+    1. tollboothapp1 Function App -> Configurations -> New Application setting
+        Name: computerVisionApiUrl, Value: Get URL from "Keys and Endpoint" in the resource & append "vision/v2.0/ocr" to the end 
+        Name: computerVisionApiKey, Value: "Secret identifier" from the Secret in the Key Vault & append "@Microsoft.KeyVault(SecretUri=" to the start
+        Name: eventGridTopicEndpoint, Value: "Topic Endpoint" from Overview in the resource
+        Name: eventGridTopicKey, Value: "Secret identifier" from the Secret in the Key Vault & append "@Microsoft.KeyVault(SecretUri=" to the start
+        Name: cosmosDBEndPointUrl, Value: "URI" from Overview in the resource
+        Name: cosmosDBAuthorizationKey, Value: "Secret identifier" from the Secret in the Key Vault & append "@Microsoft.KeyVault(SecretUri=" to the start
+        Name: cosmosDBDatabaseId, Value: LicensePlates
+        Name: cosmosDBCollectionId, Value: Processed
+        Name: exportCsvContainerName, Value: export
+        Name: blobStorageConnection, Value: "Secret identifier" from the Secret in the Key Vault & append "@Microsoft.KeyVault(SecretUri=" to the start
+
+    2. Opened the tollboth folder in visual studio code
+
+![Alt text](image-5.png)
+
+    3. Typed the following to download all the packages needed that the .csproj file shows: dotnet restore
+    4. Opened the Todo Tree Extension
+    5. Opened the ProcessImage.cs file
+        Noticed that the Run method is decorated with the FunctionName attribute, which sets the name of the Azure Function to "ProcessImage".
+
+![Alt text](image-6.png)
+
+        This is triggered by HTTP requests sent to it from the Event Grid service.
+        You tell Event Grid that you want to get these notifications at your function's URL by creating an event subscription in which you subscribe to blob-created events.
+        The function's trigger watches for new blobs being added to the images container of the storage account that was created in Exercise 1.
+        The data passed to the function from the Event Grid notification includes the URL of the blob.
+        That URL is in turn passed to the input binding to obtain the uploaded image from Blob storage.
+
+    6. Added the following under the TODO1: licensePlateText = await new FindLicensePlateText(log, _client).GetLicensePlate(licensePlateImage);
+    7. Opened the FindLicensePlateText.cs file
+        This class is responsible for contacting the Computer Vision API to find and extract the license plate text from the photo, using OCR.
+        Notice that this class also shows how you can implement a resilience pattern using Polly, an open source .NET library that helps you handle transient errors.
+        This is useful for ensuring that you do not overload downstream services, in this case, the Computer Vision API.
+    8. Added the following under the TODO2:
+        var uriBase = Environment.GetEnvironmentVariable("computerVisionApiUrl");
+        var apiKey = Environment.GetEnvironmentVariable("computerVisionApiKey");
+        These correspond to the Application Settings that were added earlier
+    9. Opened the SendToEventGrid.cs file
+        This class is responsible for sending an Event to the Event Grid topic, including the event type and license plate data.
+        Event listeners will use the event type to filter and act on the events they need to process.
+        Make note of the event types defined here (the first parameter passed into the Send method), as they will be used later on when creating new functions in the second Function App you provisioned earlier.
+    10. Added the following under TODO3: await Send("savePlateData", "TollBooth/CustomerService", data);
+    11. Added the following under TODO4: await Send("queuePlateForManualCheckup", "TollBooth/CustomerService", data);
+
+[Reference key vault from app service](https://learn.microsoft.com/en-us/azure/app-service/app-service-key-vault-references?tabs=azure-cli)
+
 Challenge 05: Deployment
 Deploy the Tollbooth project to the “App” in the Azure Portal Function App and configure the Event Grid
 Challenge 06: Create Functions in the Portal
