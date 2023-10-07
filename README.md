@@ -221,12 +221,82 @@ Now whenever a blob is created the storage account is going to call the "Process
 [Deploy Functions to Azure](https://www.thebestcsharpprogrammerintheworld.com/2018/08/21/deploy-an-azure-function-created-from-visual-studio-2/)
 [Create Event Grid Subscription in Azure Function](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-event-grid-trigger?tabs=python-v2%2Cisolated-process%2Cnodejs-v4%2Cextensionv3&pivots=programming-language-csharp#azure-portal)
 
-Challenge 06: Create Functions in the Portal
+## Challenge 06: Create Functions in the Portal
 Create the event triggered functions in the Azure Portal to respond to Event Grid Topics
+
+    1. Created a function that is triggered by event grid: toolboothevents1 -> Overview -> Create in Azure portal
+        Template: Azure Event Grid trigger, New Function: SavePlateData
+        A function that will be run whenever an event grid receives a new event
+    
+    2. SavePlateData -> Code + Test -> Pasted the following code:
+        ´´´´
+        module.exports = function(context, eventGridEvent) {
+        context.log(typeof eventGridEvent);
+        context.log(eventGridEvent);
+
+        context.bindings.outputDocument = {
+            fileName: eventGridEvent.data['fileName'],
+            licensePlateText: eventGridEvent.data['licensePlateText'],
+            timeStamp: eventGridEvent.data['timeStamp'],
+            exported: false
+        };
+
+        context.done();
+        };
+        ´´´´
+    
+    3. Added an event grid subscription: whatthehacktopic1 -> Event Subscriptions -> Event Subscription
+    Name: SAVE, Event Schema: Event Grid Schema, Event Type : savePlateData, Event Type: Azure Function, Endpoint: SavePlateData
+
+![Alt text](image-9.png)
+
+    4. Added a Cosmos DB Output to the function: tollboothevents1 -> Overview -> SavePlateData -> Integration
+        Create new Cosmos DB account connection, Database Name : LicensePlates, Collection Name : Processed
+
+![Alt text](image-10.png)
+
+    5. Create another function that is triggered by event grid: tollboothevents1 -> Overview -> Create
+        Template: Azure Event Grid trigger, New Function: QueuePlateForManualCheckup
+
+    6. QueuePlateForManualCheckup -> Code + Test -> Pasted the following code:
+        ´´´´
+        module.exports = async function(context, eventGridEvent) {
+        context.log(typeof eventGridEvent);
+        context.log(eventGridEvent);
+
+        context.bindings.outputDocument = {
+            fileName: eventGridEvent.data['fileName'],
+            licensePlateText: '',
+            timeStamp: eventGridEvent.data['timeStamp'],
+            resolved: false
+        };
+
+        context.done();
+        };
+        ´´´´
+    
+    7. Added an event grid subscription: whatthehacktopic1 -> Event Subscriptions -> Event Subscription
+        Name: QUEUE, Event Schema: Event Grid Schema, Event Type: queuePlateForManualCheckup, Event Type: Azure Function, Endpoint: QueuePlateForManualCheckup
+
+![Alt text](image-11.png)
+
+    8. Added a Cosmos DB Output to the function: tollboothevents1 -> Overview -> QueuePlateForManualCheckup -> Integration
+        Use the previous Cosmos DB account connection, Database Name : LicensePlates, Collection Name : NeedsManualReview
+
+![Alt text](image-12.png)
+
+    9. Went to each Function to verify code: Code + Test -> Test/Run
+
+![Alt text](image-13.png)
+
+[Create your first function in the Azure portal](https://learn.microsoft.com/en-us/azure/azure-functions/functions-get-started?pivots=programming-language-csharp)
+[Store unstructured data using Azure Functions and Azure Cosmos DB](https://learn.microsoft.com/en-us/azure/azure-functions/functions-integrate-store-unstructured-data-cosmosdb?tabs=csharp)
+
 Challenge 07: Monitoring
 Configure application monitoring with Application Insights Resource on Azure Portal
 Challenge 08: Data Export Workflow
 Deploy a Logic App to periodically export the license plate data and conditionally send an email
+
 
 ## Optional Challenges
 Challenge 07A: Scale the Cognitive Service
